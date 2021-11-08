@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/rendering.dart';
 import '../wsocket_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,17 +50,18 @@ class _HomeState extends State<Home> {
                     ),
                   ],
                 ),
-                Column(
-                  //where posts are shown
-                  children: <Widget>[
-                    BlocConsumer<SocketCubit, WebSocketChannel>(
-                      listener: (context, state) {},
-                      builder: (context, state) {
-                        state.sink.add('{"type": "get_posts"}');
-                        return Center(
-                          child: StreamBuilder(
+                Expanded(
+                  child: Column(
+                    //where posts are shown
+                    children: <Widget>[
+                      BlocConsumer<SocketCubit, WebSocketChannel>(
+                        listener: (context, state) {},
+                        builder: (context, state) {
+                          state.sink.add('{"type": "get_posts"}');
+                          return StreamBuilder(
                               stream: state.stream,
                               builder: (context, snapshot) {
+                                //loading posts
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
                                   return const Center(
@@ -67,6 +69,7 @@ class _HomeState extends State<Home> {
                                   );
                                 }
 
+                                //once response has posts
                                 if (snapshot.connectionState ==
                                         ConnectionState.done ||
                                     snapshot.connectionState ==
@@ -75,49 +78,115 @@ class _HomeState extends State<Home> {
                                   final decode =
                                       jsonDecode(snapshot.data.toString())
                                           as Map;
-                                  final posts = decode['data']['posts'] as List;
+                                  final lists = decode['data']['posts'] as List;
+                                  final posts = lists.reversed.toList();
                                   print(posts);
+                                  state.sink.close();
 
-                                  return SingleChildScrollView(
-                                    physics: ScrollPhysics(),
-                                    child: Center(
-                                      child: ListView.builder(
-                                          itemCount: posts.length,
-                                          shrinkWrap: true,
-                                          scrollDirection: Axis.vertical,
-                                          itemBuilder: (context, index) {
-                                            return Container(
-                                              padding: EdgeInsets.fromLTRB(
-                                                  10, 10, 10, 0),
-                                              child: Card(
-                                                elevation: 5,
-                                                child: Column(
-                                                  children: <Widget>[
-                                                    Text('Title: ' +
-                                                        posts[index]['title']),
-                                                    Text(posts[index]
-                                                        ['description']),
-                                                    Image.network(
-                                                        posts[index]['image']),
-                                                    Text(posts[index]['date']),
-                                                    Text('Written by ' +
-                                                        posts[index]['author']),
+                                  return Expanded(
+                                    child: ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: posts.length,
+                                        itemBuilder: (context, index) {
+                                          return Card(
+                                            child: Row(
+                                              children: <Widget>[
+                                                Column(
+                                                  children: [
+                                                    Container(
+                                                      margin: const EdgeInsets
+                                                              .fromLTRB(
+                                                          10, 10, 20, 10),
+                                                      width: 150,
+                                                      height: 150,
+                                                      decoration: BoxDecoration(
+                                                        image: const DecorationImage(
+                                                            image: NetworkImage(
+                                                                "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1665px-No-Image-Placeholder.svg.png"),
+                                                            fit: BoxFit.cover),
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
+                                                        child: FadeInImage.assetNetwork(
+                                                            image: posts[index][
+                                                                        'image']
+                                                                    ?.toString() ??
+                                                                'https://mpama.com/wp-content/uploads/2017/04/default-image.jpg',
+                                                            placeholder:
+                                                                'assets/no_image.png',
+                                                            fit: BoxFit.fill),
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
-                                              ),
-                                            );
-                                          }),
-                                    ),
+                                                Expanded(
+                                                  child: Container(
+                                                    margin: const EdgeInsets
+                                                        .fromLTRB(0, 10, 0, 10),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Container(
+                                                          margin:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  bottom: 10),
+                                                          child: Text(
+                                                            'Title: ' +
+                                                                posts[index]
+                                                                    ['title'],
+                                                            style:
+                                                                const TextStyle(
+                                                                    fontSize:
+                                                                        20),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          posts[index]
+                                                              ['description'],
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 14),
+                                                        ),
+                                                        Text(
+                                                          'Written by ' +
+                                                              posts[index]
+                                                                  ['author'],
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 14),
+                                                        ),
+                                                        Text(
+                                                          posts[index]['date'],
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
                                   );
                                 }
                                 return const Center(
                                   child: Text('No data'),
                                 );
-                              }),
-                        );
-                      },
-                    )
-                  ],
+                              });
+                        },
+                      )
+                    ],
+                  ),
                 )
               ],
             ),
